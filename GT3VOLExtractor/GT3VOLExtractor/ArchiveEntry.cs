@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using StreamExtensions;
 using System.IO.Compression;
+using System.Buffers;
 
 namespace GT3.VOLExtractor
 {
@@ -36,6 +37,9 @@ namespace GT3.VOLExtractor
                 path = Path.Combine(path, Name);
                 stream.Position = Location * BlockSize;
 
+                if (path.Contains("option2.adc"))
+                    ;
+
                 if (GetExtension(magic) == PS2ZipExtension)
                 {
                     Console.WriteLine($"Decompressing PS2ZIP (inflate) file: {path}");
@@ -44,11 +48,16 @@ namespace GT3.VOLExtractor
                         int magic_ = stream.ReadInt();
                         int decompSize = -stream.ReadInt();
 
-                        var deflateStream = new DeflateStream(stream, CompressionMode.Decompress);
+                        byte[] buffer = ArrayPool<byte>.Shared.Rent((int)UncompressedSize);
+                        var inflater = new ICSharpCode.SharpZipLib.Zip.Compression.Streams.InflaterInputStream(stream, 
+                            new ICSharpCode.SharpZipLib.Zip.Compression.Inflater(noHeader: true));
+                        int cnt = inflater.Read(buffer, 0, (int)UncompressedSize);
+                        if (cnt != decompSize)
+                            throw new InvalidDataException("Could not read inflated data in full");
 
-                        byte[] buffer = new byte[UncompressedSize];
-                        deflateStream.Read(buffer);
-                        output.Write(buffer);
+                        output.Write(buffer, 0, (int)UncompressedSize);
+
+                        ArrayPool<byte>.Shared.Return(buffer);
                     }
                 }
                 else if (GetExtension(magic) == GZipExtension)
