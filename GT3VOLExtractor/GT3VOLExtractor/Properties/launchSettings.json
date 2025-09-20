@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GT3VOLExtractor": {
+      "commandName": "Project",
+      "commandLineArgs": "-e \"D:\\Modding_Research\\Gran_Turismo\\ImportantFiles\\GT4P\\SCES-52438\\GT4.VOL\" -da"
+    }
+  }
+}
